@@ -1,0 +1,120 @@
+import { ConditionalKeys } from "type-fest";
+import { UnknownObject } from "./common";
+
+/**
+ * Get all the keys of an object that map to a given type.
+ * @deprecated Just use type-fest's `ConditionalKeys` directly instead.
+ */
+export type KeysThatMapTo<T, Obj extends object> = ConditionalKeys<Obj, T>;
+
+/**
+ * Get all the entries of an object as an array of tuples that preserve the
+ * mapping between key and value.
+ */
+export type Entries<T> = Array<
+  {
+    [K in keyof T]: [K, T[K]];
+  }[keyof T]
+>;
+
+/**
+ * A type that can be used to create a branded type.
+ */
+export type Brand<T, B extends string> = T & { __brand: B };
+
+/**
+ * A type to remove the brand from a branded type.
+ */
+export type Unbrand<T> = T extends Brand<infer U, string> ? U : T;
+
+/**
+ * Recursively removes all `TypeToExclude` types from a type.
+ */
+export type ExcludeDeep<T, TypeToExclude> =
+  T extends Array<infer U> ? Array<ExcludeDeep<U, TypeToExclude>>
+  : T extends ReadonlyArray<infer U> ?
+    ReadonlyArray<ExcludeDeep<U, TypeToExclude>>
+  : T extends Map<infer K, infer V> ? Map<K, ExcludeDeep<V, TypeToExclude>>
+  : T extends ReadonlyMap<infer K, infer V> ?
+    ReadonlyMap<K, ExcludeDeep<V, TypeToExclude>>
+  : T extends Set<infer U> ? Set<ExcludeDeep<U, TypeToExclude>>
+  : T extends ReadonlySet<infer U> ? ReadonlySet<ExcludeDeep<U, TypeToExclude>>
+  : T extends UnknownObject ?
+    {
+      [K in keyof T as Exclude<T[K], TypeToExclude> extends never ? never
+      : K]: ExcludeDeep<T[K], TypeToExclude>;
+    }
+  : Exclude<T, TypeToExclude>;
+
+export type SwapDeep<T, TypeToSwap, SwapWith> =
+  T extends Array<infer U> ? Array<SwapDeep<U, TypeToSwap, SwapWith>>
+  : T extends ReadonlyArray<infer U> ?
+    ReadonlyArray<SwapDeep<U, TypeToSwap, SwapWith>>
+  : T extends Map<infer K, infer V> ? Map<K, SwapDeep<V, TypeToSwap, SwapWith>>
+  : T extends ReadonlyMap<infer K, infer V> ?
+    ReadonlyMap<K, SwapDeep<V, TypeToSwap, SwapWith>>
+  : T extends Set<infer U> ? Set<SwapDeep<U, TypeToSwap, SwapWith>>
+  : T extends ReadonlySet<infer U> ?
+    ReadonlySet<SwapDeep<U, TypeToSwap, SwapWith>>
+  : T extends UnknownObject ?
+    {
+      [K in keyof T as Exclude<T[K], TypeToSwap> extends never ? never
+      : K]: SwapDeep<T[K], TypeToSwap, SwapWith>;
+    }
+  : // check if this is correct
+  T extends TypeToSwap ? Exclude<T, TypeToSwap> | SwapWith
+  : T;
+
+export type UndefinedToNullDeep<T> = SwapDeep<T, undefined, null>;
+export type NullToUndefinedDeep<T> = SwapDeep<T, null, undefined>;
+
+/**
+ * Represents any function with inferrable parameters and return types.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyFunction = (...args: any[]) => any;
+
+/**
+ * Represents any function with a given return type.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyFunctionWithReturn<R> = (...args: any[]) => R;
+
+/**
+ * Represents any function with a given argument type.
+ */
+export type AnyFunctionWithArguments<Params extends unknown[]> = (
+  ...args: Params
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+) => any;
+
+export type AnyFunctionWithSignature<Params extends unknown[], Return> = (
+  ...args: Params
+) => Return;
+
+/**
+ * Represents a single-parameter function that returns the same type it was
+ * given.
+ * (Note: this is just at the type-level. It does not mean the function
+ * will return the same _value_. Just that it will return the same _type_.)
+ */
+export type IdentityFnType<T> = (value: T) => T;
+
+/**
+ * Get the element type of an array or tuple.
+ */
+export type ElementOf<T> = T extends ReadonlyArray<infer U> ? U : never;
+
+/**
+ * A utility type to set the types of the properties in `KeysToSet` to be
+ * non-undefined.
+ *
+ * If you want to set properties to be NonNullable then use type-fest's
+ * `SetNonNullable` instead.
+ */
+export type SetDefined<
+  T extends object,
+  KeysToSet extends keyof T = keyof T,
+> = {
+  [K in keyof T]: K extends KeysToSet ? Exclude<T[K], undefined> : T[K];
+};
